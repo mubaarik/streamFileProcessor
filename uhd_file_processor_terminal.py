@@ -6,6 +6,9 @@ if __name__ == "__main__":
 	prsr=argp.ArgumentParser(description = 'Running the program to manupilate streamed file data')
 	prsr.add_argument('filename', action = 'store', 
 		help = 'name of file generated with uhd_rx_cfile for processing. You have to specify this.')
+
+	prsr.add_argument('--decimator', action= 'store', default=1,type=int, 
+		help='downsampling factor. See scipy.signal.decimate')
 	prsr.add_argument('--center_freq', action='store', default=850e6, type = int, 
 		help = 'The center frequency of the streamed samples. It is should be same as'+ 
 		'the -f argument provided to the uhd_rx_cfile command.'+
@@ -23,7 +26,7 @@ if __name__ == "__main__":
 		' removed at the beginning'+ 'high_cutOff removed at the end.'+'\n'+
 		'time_segments: returns when second segment of the data specified by --segment_index. --segment_index is greater than the length'+
 		' the last segment is returned')
-	prsr.add_argument('--outputfile', action='store', 
+	prsr.add_argument('--outputfile', action='store', default='segment',
 		help ='File to write if --func_call=write_to_csv_file')
 	prsr.add_argument('--high_cutOff', action='store', default=0,type=int, 
 		help='how many data points to remove at the beginning when --func_call==segment')
@@ -31,8 +34,13 @@ if __name__ == "__main__":
 		help='how many data points to remove at the end when --func_call==segment')
 	prsr.add_argument('--segment_index', action='store', type=int,
 		help='Integer to specify the index of the time segment to output or when --func_call=time_segments or plot. If not provided all of them are outputed')
+	prsr.add_argument('--plotname', action='store', default='data segment',help='name of the plot to be saved')
+
 	args = prsr.parse_args()
-	smple_file_obj = sfa(str(args.filename), center_freq=args.center_freq, sample_rate=args.sample_rate)
+	save_plot = False
+	if args.outputfile!=None:
+		save_plot = True
+	smple_file_obj = sfa(str(args.filename), center_freq=args.center_freq, sample_rate=args.sample_rate,decimation=args.decimator)
 
 	segments = smple_file_obj.segments_to_db(fft=args.fft)
 	print "args.fft: ",args.fft
@@ -54,7 +62,7 @@ if __name__ == "__main__":
 		else:
 			smple_file_obj.time_segments()
 	else:
-		smple_file_obj.plot(smple_file_obj.segments_to_db(fft=args.fft)[0], fft=args.fft,term=True)
+		smple_file_obj.plot(smple_file_obj.segments_to_db(fft=args.fft)[0], fft=args.fft,term=True,title=args.plotname, save_plot=save_plot,save_to_as=args.outputfile)
 		
 
 

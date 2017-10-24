@@ -2,14 +2,20 @@ import time
 import pandas as pd
 import numpy as np
 import scipy
+import scipy.signal
 import matplotlib.pyplot as plt
 class SampleFileAnalysis:
-    def __init__(self, filename, center_freq=850e6, sample_rate=5e5, file_datatype = np.complex64):
+    def __init__(self, filename, center_freq=850e6, sample_rate=5e5,decimation = 1, file_datatype = np.complex64):
         self.filename = filename;
         self.freq = center_freq;
         self.samp_rate = sample_rate
         self.cmplx_data = scipy.fromfile(open(filename), dtype = file_datatype)
+        self.decimation=decimation
+        if self.decimation>1:
+            self.cmplx_data = scipy.signal.resample(scipy.fromfile(open(filename), dtype = file_datatype), self.samp_rate/self.decimation)
+            self.samp_rate = sample_rate/self.decimation
         self.n = len(self.cmplx_data)
+        print 'self.n: ',self.n
         self.samp_spacing = 1.0/self.samp_rate
     #Return the complex data from the provided file
     def raw_dataSegment(self, strt_cut = 0, end_cut = 0):
@@ -94,6 +100,6 @@ class SampleFileAnalysis:
     #Write the paired frequency, power components to a csv file
     def freq_pow_pair_to_csv(self,filename=None, fft=True):
         if filename==None:
-            filename = self.filename.split('.')[0].strip()+"freq_pow_pairs"+'.csv'
+            filename = self.filename.split('.')[0].strip()+"_freq_pow_pairs_"+str(self.decimation)+'.csv'
         df = self.freq_pow_pairs_map(fft = fft)
         df.to_csv(filename)
